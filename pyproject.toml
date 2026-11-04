@@ -7,6 +7,9 @@ license = { text = "MIT" }
 readme = "README.md"
 dependencies = []
 
+[project.urls]
+Homepage = "https://github.com/naitly0909/lynx-relay"
+
 [project.scripts]
 lynx-relay = "lynxrelay.cli:main"
 

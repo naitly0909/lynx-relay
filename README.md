@@ -1,16 +1,19 @@
 # Lynx Relay
 
+<!-- mcp-name: io.github.naitly0909/lynx-relay -->
+
 **One local address for your free blockchain RPC allowances.** Open one free account at each provider, paste the keys once, and point your bot at `http://127.0.0.1:8899/solana`. When one provider's free allowance runs out, rate-limits you or goes down, the relay moves to the next one by itself. Built for beginners who want to build without paying for an RPC plan.
 
 - **One account per provider.** The relay switches *between different providers*. It is not a tool for opening several accounts at the same provider: that usually breaks their terms and can get you banned.
 - **Keys stay on your machine.** They are stored in `~/.lynx-relay/config.json` (mode 600) or in environment variables, and are sent only to the provider they belong to. Nothing goes through LynxCheck or anyone else.
 - **Standard library only.** Python 3.9+, no dependencies, no account with us.
-- Requests (HTTP JSON-RPC) and Solana streams (WebSocket `logsSubscribe` and the other `...Subscribe` methods) are both switched. A transaction is never sent twice after an unclear failure (see below).
+- Requests (HTTP JSON-RPC) and streams (Solana `...Subscribe` methods, EVM `eth_subscribe`) are both switched. A transaction is never sent twice after an unclear failure (see below).
 
 ## Quick start
 
 ```bash
-cd relay
+git clone https://github.com/naitly0909/lynx-relay
+cd lynx-relay
 python3 -m lynxrelay providers          # which providers have a free tier, with the source of each number
 python3 -m lynxrelay init               # asks for one key per provider; press Enter to skip any
 python3 -m lynxrelay test               # one cheap call to every configured source

@@ -1,0 +1,11 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.naitly0909/lynx-relay",
+  "title": "Lynx Relay",
+  "description": "Free blockchain RPC through your own free allowances: read-only calls, usage and provider list.",
+  "repository": { "url": "https://github.com/naitly0909/lynx-relay", "source": "github" },
+  "version": "0.3.1",
+  "packages": [
+    { "registryType": "pypi", "registryBaseUrl": "https://pypi.org", "identifier": "lynx-relay", "version": "0.3.1", "runtimeHint": "uvx", "transport": { "type": "stdio" }, "packageArguments": [ { "type": "positional", "value": "mcp" } ] }
+  ]
+}
