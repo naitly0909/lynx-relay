@@ -1,9 +1,11 @@
 """Minimal RFC 6455 WebSocket client and server side, standard library only: handshake, text/binary frames (masking, 16/64-bit lengths, fragments), ping/pong, close."""
 import base64, hashlib, os, socket, ssl, struct, threading, urllib.parse
+from . import __version__
 
 GUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
 MAX_MSG = 16 * 1024 * 1024
 TEXT, BINARY, CLOSE, PING, PONG = 1, 2, 8, 9, 10
+IDLE_TIMEOUT = 90.0          # nothing at all from a provider for this long (not even a pong): the connection is dead
 
 class WSClosed(Exception):
     pass
@@ -59,6 +61,7 @@ class Conn:
             try: self.sock.sendall(head + payload)
             except OSError as e: raise WSClosed(type(e).__name__)
     def send_text(self, text): self.send(TEXT, text.encode("utf-8"))
+    def ping(self): self.send(PING)
     def close(self):
         if self.closed: return
         self.closed = True
@@ -69,7 +72,7 @@ class Conn:
             except OSError: pass
 
 def connect(url, timeout=10.0, headers=None):
-    """Open a client connection to ws:// or wss://. The URL (it may carry a key) is never put in an exception message."""
+    """Open a client connection to ws:// or wss://. Reads time out after IDLE_TIMEOUT, so the owner must ping (Session does). The URL (it may carry a key) is never put in an exception message."""
     u = urllib.parse.urlsplit(url)
     if u.scheme not in ("ws", "wss") or not u.hostname: raise WSClosed("bad url")
     port = u.port or (443 if u.scheme == "wss" else 80)
@@ -77,7 +80,7 @@ def connect(url, timeout=10.0, headers=None):
         sock = socket.create_connection((u.hostname, port), timeout=timeout)
         if u.scheme == "wss": sock = ssl.create_default_context().wrap_socket(sock, server_hostname=u.hostname)
         key = base64.b64encode(os.urandom(16)).decode(); path = (u.path or "/") + ("?" + u.query if u.query else "")
-        req = f"GET {path} HTTP/1.1\r\nHost: {u.netloc.split('@')[-1]}\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Key: {key}\r\nSec-WebSocket-Version: 13\r\nUser-Agent: lynx-relay/0.2\r\n"
+        req = f"GET {path} HTTP/1.1\r\nHost: {u.netloc.split('@')[-1]}\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Key: {key}\r\nSec-WebSocket-Version: 13\r\nUser-Agent: lynx-relay/{__version__}\r\n"
         req += "".join(f"{k}: {v}\r\n" for k, v in (headers or {}).items()) + "\r\n"; sock.sendall(req.encode())
         resp = b""
         while b"\r\n\r\n" not in resp:
@@ -87,7 +90,7 @@ def connect(url, timeout=10.0, headers=None):
         head, _, rest = resp.partition(b"\r\n\r\n"); lines = head.decode("latin-1").split("\r\n"); hd = {l.split(":", 1)[0].strip().lower(): l.split(":", 1)[1].strip() for l in lines[1:] if ":" in l}
         status = int(lines[0].split()[1]) if len(lines[0].split()) > 1 else 0
         if status != 101 or hd.get("sec-websocket-accept") != accept_key(key): raise WSClosed(f"handshake refused {status}")
-        sock.settimeout(None); c = Conn(sock, True)
+        sock.settimeout(IDLE_TIMEOUT); c = Conn(sock, True)
         c.pre = rest
         return c
     except WSClosed: raise

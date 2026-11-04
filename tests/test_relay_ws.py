@@ -1,6 +1,6 @@
 """Lynx Relay streams: WebSocket codec, session failover with kept subscriptions, metering, and one real-socket round trip through the local server."""
 import http.client, json, os, queue, socket, sys, tempfile, threading, time, unittest
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "relay"))
 from lynxrelay import core, server as SRV, usage as U, ws as WS, wsrelay as WSR
 
 class Fake:
@@ -15,6 +15,7 @@ class Fake:
         if self.closed: raise WS.WSClosed("closed")
         self.sent.append(json.loads(t))
     def close(self): self.closed = True; self.q.put(None)
+    def ping(self): pass
     def wait_sent(self, n, timeout=3):
         end = time.time() + timeout
         while len(self.sent) < n and time.time() < end: time.sleep(0.01)

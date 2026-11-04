@@ -1,6 +1,6 @@
 [project]
 name = "lynx-relay"
-version = "0.3.0"
+version = "0.3.1"
 description = "Spend your free RPC allowances in turn: one account per provider, automatic switching, local keys."
 requires-python = ">=3.9"
 license = { text = "MIT" }

@@ -1,7 +1,7 @@
 """Local proxy: point any bot at http://127.0.0.1:8899/solana or /evm/<chain> (eth, bsc, base, arb, polygon, avax, op) instead of a provider URL.
 Binds to 127.0.0.1 only. Requests that carry an Origin header (a web page in your browser) or a foreign Host header are refused, so a website cannot spend your allowance.
 GET /status (states and usage, no keys), GET /health. WebSocket: ws://127.0.0.1:<port>/ws/solana or /ws/evm/<chain> (subscriptions are kept when the source changes). The answering source is in the X-Relay-Source response header; the JSON body is the node's own answer, untouched."""
-import http.server, json, socketserver, threading
+import http.server, json, signal, socketserver, threading
 from . import __version__, ws as WS, wsrelay as WSR
 
 MAX_REQUEST = 1_000_000
@@ -49,6 +49,8 @@ def serve(relay, port=8899, background=False):
     srv = Server(("127.0.0.1", port), make_handler(relay, port))
     if background:
         threading.Thread(target=srv.serve_forever, daemon=True).start(); return srv
+    def term(*a): raise KeyboardInterrupt
+    signal.signal(signal.SIGTERM, term)
     try: srv.serve_forever()
     except KeyboardInterrupt: pass
     finally: relay.usage.flush(); srv.server_close()

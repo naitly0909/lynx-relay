@@ -2,7 +2,7 @@
 run `lynx-relay init` or `lynx-relay add <provider>` in a terminal."""
 import json, sys
 from . import __version__, catalog as CAT
-from .core import Relay, WRITE_METHODS
+from .core import Relay, is_write
 
 def chain_cap(chain):
     c = str(chain or "").lower(); return "solana_rpc" if c in ("solana", "sol") else "evm_rpc:" + c
@@ -15,7 +15,7 @@ def tools(relay):
     def status(a): return {"active": relay.active(), "endpoints": relay.status()}
     def rpc(a):
         m = str(a.get("method", ""))
-        if m in WRITE_METHODS: return {"error": "write methods are not available through the assistant"}
+        if is_write(m): return {"error": "write methods are not available through the assistant"}
         doc, src = relay.rpc(chain_cap(a.get("chain")), m, a.get("params") or [])
         return {"source": src, "response": doc}
     def setup(a): return {"steps": ["pip install the package or run it from the repository", "lynx-relay init  (asks for one key per provider, press Enter to skip)", "lynx-relay test", "lynx-relay serve  then use http://127.0.0.1:8899/solana in your bot"], "rule": "one account per provider"}
@@ -31,6 +31,7 @@ def main(relay=None, stdin=None, stdout=None):
     for line in stdin:
         try: r = json.loads(line)
         except ValueError: continue
+        if not isinstance(r, dict): continue
         i, m = r.get("id"), r.get("method")
         if m == "initialize": reply(i, {"protocolVersion": "2024-11-05", "capabilities": {"tools": {}}, "serverInfo": {"name": "lynx-relay", "version": __version__}})
         elif m == "tools/list": reply(i, {"tools": [{"name": n, "description": d, "inputSchema": {"type": "object", "properties": p, "required": req}} for n, (d, p, req, _) in T.items()]})
@@ -40,3 +41,4 @@ def main(relay=None, stdin=None, stdout=None):
             except Exception as e: res = {"error": type(e).__name__}
             reply(i, {"content": [{"type": "text", "text": json.dumps(res)}]})
         elif i is not None: reply(i, error={"code": -32601, "message": "method not found"})
+    relay.usage.flush()

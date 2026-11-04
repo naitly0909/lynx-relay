@@ -3,20 +3,23 @@ Capabilities: "solana_rpc" and "evm_rpc:<chain>" (JSON-RPC over HTTP, single cal
 Rules that keep it honest and safe:
   * keys never leave this process except to their own provider; error texts, status and logs carry provider NAMES and reasons, never URLs or keys;
   * a definitive answer of a node (invalid params, execution reverted, ...) is returned as it is, never retried elsewhere; only rate limits, quota, auth, plan limits and outages fail over;
-  * write methods (sendTransaction, eth_sendRawTransaction) are never repeated after an AMBIGUOUS failure (timeout, 5xx): the first node may have processed it. They fail over only after a clear refusal (429, quota, auth);
+  * write methods (is_write: every send*, signing and airdrop method) are never repeated after an AMBIGUOUS failure (timeout, 5xx): the first node may have processed it. They fail over only after a clear refusal (429, quota, auth);
   * the local counter stops an endpoint at 98% of its free allowance and the provider's own quota error switches it off for the rest of the period."""
-import json, re, threading, time, urllib.error, urllib.request
-from . import catalog as CAT, config as CFG
+import datetime, json, re, threading, time, urllib.error, urllib.request
+from . import __version__, catalog as CAT, config as CFG
 from .usage import Usage, period_key
 
-WRITE_METHODS = frozenset({"sendTransaction", "sendRawTransaction", "eth_sendRawTransaction", "eth_sendTransaction", "simulateBundle", "sendBundle"})
+WRITE_RE = re.compile(r"(?:^|_)send|^simulateBundle$|^requestAirdrop$|^eth_sign|^personal_", re.I)       # a pattern, not a list: providers keep adding send methods (eth_sendBundle, eth_sendUserOperation, ...)
 RATE_CODES = frozenset({-32005, -32429, -32007, 429})
 QUOTA_RE = re.compile(r"quota|monthly|credits? (?:limit|exhaust)|usage limit|out of credits|exceeded your|plan limit|compute units", re.I)
 RATE_RE = re.compile(r"rate.?limit|too many requests|limit exceeded|throttl|slow down", re.I)
 PLAN_RE = re.compile(r"not available on (?:your|the free)|upgrade|not supported|unsupported|archive|paid plan|not enabled|method not found", re.I)
+CONTRACT_RE = re.compile(r"revert|vm exception|out of gas|invalid opcode|custom program error|simulation failed|insufficient funds", re.I)      # the chain's own answer: its text comes from the contract ("limit exceeded", "quota"), not from the provider
 SAFE_MARGIN = 0.98
 MAX_BODY = 2_000_000
 BACKOFF = (5, 15, 30, 60, 120, 300)
+
+def is_write(method): return bool(WRITE_RE.search(str(method)))
 
 class Result:
     """status: HTTP status for the client; body: bytes (JSON); source: provider id or None; tried: [{"source","reason"}]."""
@@ -27,7 +30,7 @@ class Result:
 
 def default_transport(url, body, timeout):
     """-> (status, body bytes, retry_after seconds or None). Raises on connection problems (the message is never used)."""
-    req = urllib.request.Request(url, body, {"Content-Type": "application/json", "Accept": "application/json", "User-Agent": "lynx-relay/0.2"})
+    req = urllib.request.Request(url, body, {"Content-Type": "application/json", "Accept": "application/json", "User-Agent": "lynx-relay/" + __version__})
     try:
         with urllib.request.urlopen(req, timeout=timeout) as r: return r.status, r.read(MAX_BODY), None
     except urllib.error.HTTPError as e:
@@ -71,8 +74,7 @@ class Relay:
             for e in p["endpoints"]:
                 url = e["url"].replace("{key}", key) if p["kind"] != "keyless" else e["url"]
                 eps.append(Endpoint(p["id"], e["cap"], url, e["rps"], e["limit"], e["period"], e["cost"], [key], int(rd.get(p["id"], 1) or 1), kw.get("clock", time.time), priority=(idx * 10) if p["kind"] != "keyless" else 1000 + int(p.get("rank", 5)) * 10, name=p.get("name")))
-        for e in eps:
-            e.cost_per_mb = float(next((x.get("cost_per_mb", 0) for p in data["providers"] if p["id"] == e.provider for x in p["endpoints"] if x["cap"] == e.cap), 0) or 0)
+                eps[-1].cost_per_mb = float(e.get("cost_per_mb") or 0)
         for cap, order in (cfg.get("order") or {}).items():       # explicit order per capability: listed providers first, in that order
             for rank, pid in enumerate(order):
                 for e in eps:
@@ -90,11 +92,6 @@ class Relay:
         if ep.limit and ep.period != "none" and self.usage.used(ep.acct, ep.period, now, ep.reset_day) + cost > ep.limit * SAFE_MARGIN: return "allowance_used_up"
         return None
 
-    def _redact(self, text, ep):
-        for k in ep.keys:
-            if k: text = text.replace(k, "***")
-        return text
-
     def _classify(self, status, body, ep):
         """-> (kind, retry_after or None, ambiguous). kind: ok | rate_limited | quota | auth | unsupported | unavailable."""
         text = body[:2000].decode("utf-8", "replace") if body else ""
@@ -109,6 +106,7 @@ class Relay:
             err = it.get("error") if isinstance(it, dict) else None
             if not err: continue
             code = err.get("code") if isinstance(err, dict) else None; msg = str(err.get("message", "") if isinstance(err, dict) else err)
+            if code == 3 or CONTRACT_RE.search(msg): continue
             if QUOTA_RE.search(msg): return "quota", None, False          # before the rate codes: several providers answer a used-up allowance with a rate-limit code
             if code in RATE_CODES or RATE_RE.search(msg): return "rate_limited", None, False
             if code == -32601 or PLAN_RE.search(msg): return "unsupported", None, False
@@ -120,15 +118,13 @@ class Relay:
             if kind in ("rate_limited", "unavailable"):
                 ep.fails += 1; ep.rest_until = now + max(retry_after or 0, BACKOFF[min(ep.fails - 1, len(BACKOFF) - 1)])
             elif kind == "quota":
-                nxt = {"day": 86400, "month": 31 * 86400}.get(ep.period, 3600)
-                ep.exhausted_until = now + (min(nxt, 3600) if ep.period == "none" else self._until_next_period(ep, now))
+                ep.exhausted_until = now + (3600 if ep.period == "none" else self._until_next_period(ep, now))
                 if ep.limit and ep.period != "none": self.usage.set_used(ep.acct, ep.limit, ep.period, now, ep.reset_day)
             elif kind == "auth": ep.disabled = "auth (check the key)"
             elif kind == "unsupported":
                 for m in methods: ep.unsupported[m] = now + 3600
 
     def _until_next_period(self, ep, now):
-        import datetime
         pk = period_key(ep.period, now, ep.reset_day); y, m, d = (int(x) for x in pk.split("-")) if ep.period == "month" else (0, 0, 0)
         if ep.period == "day": return 86400 - (now % 86400)
         nm = (y + (m == 12), 1 if m == 12 else m + 1); end = datetime.datetime(nm[0], nm[1], d, tzinfo=datetime.timezone.utc).timestamp()
@@ -141,7 +137,7 @@ class Relay:
         except ValueError: return Result(400, b'{"jsonrpc":"2.0","id":null,"error":{"code":-32700,"message":"parse error"}}')
         items = doc if isinstance(doc, list) else [doc]
         if not items or not all(isinstance(i, dict) for i in items): return Result(400, b'{"jsonrpc":"2.0","id":null,"error":{"code":-32600,"message":"invalid request"}}')
-        methods = [str(i.get("method", "")) for i in items]; rid = items[0].get("id"); write = any(m in WRITE_METHODS for m in methods); tried = []; attempted = []; last_def = None
+        methods = [str(i.get("method", "")) for i in items]; rid = items[0].get("id"); write = any(is_write(m) for m in methods); tried = []; attempted = []; last_def = None
         cands = [e for e in self.eps if e.cap == cap]
         if not cands: return Result(404, self._err(rid, -32050, "no free source is configured for " + cap, []), None, [])
         for ep in cands:
@@ -193,9 +189,9 @@ class Relay:
 
     def active(self):
         """{cap: provider id of the first usable endpoint or None}."""
-        res = {}
-        for cap in self.caps():
-            res[cap] = next((s["source"] for s in self.status() if s["cap"] == cap and s["state"] == "ok"), None)
+        res = {cap: None for cap in self.caps()}
+        for s in self.status():
+            if s["state"] == "ok" and res[s["cap"]] is None: res[s["cap"]] = s["source"]
         return res
 
     # ---- streams (WebSocket) ----
@@ -215,7 +211,7 @@ class Relay:
         return True
 
     def ws_failed(self, ep, kind):
-        self._fail(ep, kind, None, self.clock(), []); 
+        self._fail(ep, kind, None, self.clock(), [])
         with self.lock: ep.failovers += 1
 
     def ws_ok(self, ep):
@@ -224,7 +220,7 @@ class Relay:
     def probe(self):
         """One cheap read call (getSlot / eth_blockNumber) to EVERY endpoint on its own, no failover, to check keys and reachability. Costs one call per endpoint. -> [{"source","cap","ok","kind","ms"}]."""
         out = []
-        for ep in (e for e in self.eps if not e.cap.endswith("_ws")):
+        for ep in (e for e in self.eps if "_ws" not in e.cap):
             method = "getSlot" if ep.cap == "solana_rpc" else "eth_blockNumber"; body = json.dumps({"jsonrpc": "2.0", "id": 1, "method": method, "params": []}).encode(); t0 = time.time()
             try: status, data, ra = self.transport(ep.url, body, self.timeout); kind = "unavailable" if status == 0 else self._classify(status, data, ep)[0]
             except Exception: kind = "unavailable"

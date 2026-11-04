@@ -1,6 +1,6 @@
 """Lynx Relay (relay/lynxrelay): failover, allowances, safety rules, config, local proxy, MCP, catalog. Fake transport, temp home, no network."""
 import http.client, io, json, os, stat, sys, tempfile, threading, unittest
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "relay"))
 from lynxrelay import catalog as CAT, config as CFG, core, usage as U, server as SRV, mcp as MCP
 
 OK = json.dumps({"jsonrpc": "2.0", "id": 1, "result": 123}).encode()

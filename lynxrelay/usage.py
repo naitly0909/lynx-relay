@@ -29,7 +29,8 @@ class Usage:
             pk = period_key(period, now, reset_day); r = self.data.get(eid)
             if not r or r.get("period") != pk: r = self.data[eid] = {"period": pk, "used": 0.0, "calls": 0}
             r["used"] = float(r.get("used", 0)) + n; r["calls"] = int(r.get("calls", 0)) + calls; self.dirty += 1
-            if self.dirty >= 20 and time.time() - self.last_flush >= 5: self._flush()      # at most one write every 5 s, however busy a stream is
+            age = time.time() - self.last_flush
+            if (self.dirty >= 20 and age >= 5) or age >= 60: self._flush()      # at most one write every 5 s however busy a stream is; a quiet proxy saves once a minute
     def set_used(self, eid, n, period, now, reset_day=1):
         with self.lock:
             self.data[eid] = {"period": period_key(period, now, reset_day), "used": float(n), "calls": int((self.data.get(eid) or {}).get("calls", 0))}; self._flush()

@@ -9,8 +9,8 @@ def _is_sub(method): return isinstance(method, str) and (method.endswith("Subscr
 def _is_unsub(method): return isinstance(method, str) and (method.endswith("Unsubscribe") or method == "eth_unsubscribe")
 
 class Session:
-    def __init__(self, relay, client, cap="solana_ws", connect=WS.connect, sleep=time.sleep, retry_wait=1.0, give_up_s=120.0, clock=time.time):
-        self.relay, self.client, self.cap, self.connect, self.sleep, self.retry_wait, self.give_up_s, self.clock = relay, client, cap, connect, sleep, retry_wait, give_up_s, clock
+    def __init__(self, relay, client, cap="solana_ws", connect=WS.connect, sleep=time.sleep, retry_wait=1.0, give_up_s=120.0, clock=time.time, ping_s=30.0):
+        self.relay, self.client, self.cap, self.connect, self.sleep, self.retry_wait, self.give_up_s, self.clock, self.ping_s = relay, client, cap, connect, sleep, retry_wait, give_up_s, clock, ping_s
         self.evm = cap.startswith("evm_ws")          # EVM subscription ids are hex strings (eth_subscribe); Solana ids are numbers
         self.lock = threading.RLock(); self.up = None; self.ep = None; self.done = threading.Event(); self.connected_at = 0.0
         self.subs = {}; self.upmap = {}; self.pending = {}; self.next_cid = 1; self.next_req = 10 ** 9; self.switches = 0; self.failback_s = 300.0
@@ -53,11 +53,11 @@ class Session:
                 self.subs[cid] = {"method": method, "params": m.get("params") or [], "up": None, "client_id": m.get("id")}
                 self._send_subscription(cid)
         elif _is_unsub(method):
-            params = m.get("params") or []; cid = self._in(params[0]) if params else None
+            params = m.get("params"); cid = self._in(params[0]) if isinstance(params, list) and params else None
             with self.lock: sub = self.subs.pop(cid, None)
             if sub and sub["up"] is not None:
                 with self.lock: self.upmap.pop(sub["up"], None)
-                r = self._req_id(); self._to_up({"jsonrpc": "2.0", "id": r, "method": method, "params": [sub["up"]]}); self.pending[r] = ("unsub", cid)
+                r = self._req_id(); self.pending[r] = ("unsub", cid); self._to_up({"jsonrpc": "2.0", "id": r, "method": method, "params": [sub["up"]]})
             self._to_client({"jsonrpc": "2.0", "id": m.get("id"), "result": bool(sub)})
         else: self._to_up(m)      # anything else is passed through untouched (replies come back with the client's own ids)
 
@@ -69,12 +69,12 @@ class Session:
 
     # ---- upstream side ----
     def _open_upstream(self):
-        """Connect to the next usable source and subscribe again. -> True when connected."""
-        ep = self.relay.pick_ws(self.cap)          # resting, used-up, disabled sources are skipped there, so a source that just failed is not picked again
-        if ep is None: return False
-        try: up = self.connect(ep.url, 10.0)
-        except WS.WSClosed:
-            self.relay.ws_failed(ep, "unavailable"); return True        # it now rests; the next pass picks the next source
+        """Connect to the first usable source that answers and subscribe again. -> True when connected."""
+        while True:
+            ep = self.relay.pick_ws(self.cap)          # resting, used-up, disabled sources are skipped there, so a source that just failed is not picked again
+            if ep is None: return False
+            try: up = self.connect(ep.url, 10.0); break
+            except WS.WSClosed: self.relay.ws_failed(ep, "unavailable")
         with self.lock:
             self.up, self.ep, self.upmap, self.pending = up, ep, {}, {}
             for cid in list(self.subs): self._send_subscription(cid)
@@ -86,7 +86,7 @@ class Session:
         except ValueError: return self._to_client_raw(data)
         if not isinstance(m, dict): return self._to_client_raw(data)
         rid = m.get("id")
-        if rid in self.pending:
+        if isinstance(rid, int) and rid in self.pending:
             kind, cid = self.pending.pop(rid)
             if kind == "unsub": return
             sub = self.subs.get(cid)
@@ -101,15 +101,23 @@ class Session:
                 if sub.get("client_id") is not None: self._to_client({"jsonrpc": "2.0", "id": sub["client_id"], "error": m["error"]})
             return
         params = m.get("params")
-        if isinstance(params, dict) and params.get("subscription") in self.upmap: params["subscription"] = self._out(self.upmap[params["subscription"]]); self._to_client(m); return
+        if isinstance(params, dict) and isinstance(params.get("subscription"), (int, str)) and params["subscription"] in self.upmap: params["subscription"] = self._out(self.upmap[params["subscription"]])
         self._to_client(m)
 
     def _to_client_raw(self, data):
         try: self.client.send_text(data.decode("utf-8", "replace"))
         except WS.WSClosed: self.done.set()
 
+    def _heartbeat(self):
+        """Pings keep a quiet subscription alive and make a dead connection time out (ws.IDLE_TIMEOUT), which starts the switch to the next source."""
+        while not self.done.wait(self.ping_s):
+            with self.lock: up = self.up
+            if up is None: continue
+            try: up.ping()
+            except WS.WSClosed: pass
+
     def run(self):
-        threading.Thread(target=self._client_loop, daemon=True).start(); started_wait = None
+        threading.Thread(target=self._client_loop, daemon=True).start(); threading.Thread(target=self._heartbeat, daemon=True).start(); started_wait = None
         while not self.done.is_set():
             if self.up is None:
                 if not self._open_upstream():
@@ -117,7 +125,6 @@ class Session:
                     if self.clock() - started_wait > self.give_up_s: break            # nothing usable for a long time: let the client decide
                     self.sleep(self.retry_wait); continue
                 started_wait = None
-                if self.up is None: continue
             if self.ep is not None and self.clock() - self.connected_at > self.failback_s:           # come back to a preferred source once it has recovered (e.g. after its monthly reset)
                 best = self.relay.pick_ws(self.cap)
                 if best is not None and best.priority < self.ep.priority:
