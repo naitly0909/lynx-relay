@@ -1,0 +1,17 @@
+[project]
+name = "lynx-relay"
+version = "0.3.0"
+description = "Spend your free RPC allowances in turn: one account per provider, automatic switching, local keys."
+requires-python = ">=3.9"
+license = { text = "MIT" }
+readme = "README.md"
+dependencies = []
+
+[project.scripts]
+lynx-relay = "lynxrelay.cli:main"
+
+[tool.setuptools]
+packages = ["lynxrelay"]
+
+[tool.setuptools.package-data]
+lynxrelay = ["catalog.json"]

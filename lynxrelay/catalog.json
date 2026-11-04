@@ -1,0 +1,717 @@
+{
+ "version": 1,
+ "verified": "2026-11-03",
+ "disclaimer": "Free tiers change without notice. 'confidence' says where a number comes from; check the provider's page before relying on it. One account per provider: do not create several accounts at the same provider to get around its limits, that usually breaks its terms.",
+ "providers": [
+  {
+   "id": "helius",
+   "name": "Helius",
+   "kind": "keyed",
+   "signup": "https://www.helius.dev/pricing",
+   "key_env": "HELIUS_API_KEY",
+   "free": {
+    "summary": "1,000,000 credits per month, 10 requests per second, 5 WebSocket connections (standard WebSocket data costs 2 credits per 0.1 MB)",
+    "confidence": "vendor_doc",
+    "source": "https://helius.dev/docs/billing/credits"
+   },
+   "endpoints": [
+    {
+     "cap": "solana_rpc",
+     "url": "https://mainnet.helius-rpc.com/?api-key={key}",
+     "rps": 8,
+     "limit": 1000000,
+     "period": "month",
+     "cost": 1
+    },
+    {
+     "cap": "solana_ws",
+     "url": "wss://mainnet.helius-rpc.com/?api-key={key}",
+     "rps": 1,
+     "limit": 1000000,
+     "period": "month",
+     "cost": 0,
+     "cost_per_mb": 20
+    }
+   ],
+   "notes": "Credits renew monthly on your billing date (set reset_day in the config)."
+  },
+  {
+   "id": "alchemy",
+   "name": "Alchemy",
+   "kind": "keyed",
+   "signup": "https://www.alchemy.com/",
+   "key_env": "ALCHEMY_API_KEY",
+   "free": {
+    "summary": "30M compute units per month (a vendor comparison page; check your dashboard). WebSocket data is billed by the byte (0.04 CU per byte).",
+    "confidence": "third_party_unverified",
+    "source": "https://www.alchemy.com/overviews/solana-rpc"
+   },
+   "endpoints": [
+    {
+     "cap": "solana_rpc",
+     "url": "https://solana-mainnet.g.alchemy.com/v2/{key}",
+     "rps": 10,
+     "limit": 30000000,
+     "period": "month",
+     "cost": 20
+    },
+    {
+     "cap": "evm_rpc:eth",
+     "url": "https://eth-mainnet.g.alchemy.com/v2/{key}",
+     "rps": 10,
+     "limit": 30000000,
+     "period": "month",
+     "cost": 20
+    },
+    {
+     "cap": "evm_rpc:base",
+     "url": "https://base-mainnet.g.alchemy.com/v2/{key}",
+     "rps": 10,
+     "limit": 30000000,
+     "period": "month",
+     "cost": 20
+    },
+    {
+     "cap": "evm_rpc:arb",
+     "url": "https://arb-mainnet.g.alchemy.com/v2/{key}",
+     "rps": 10,
+     "limit": 30000000,
+     "period": "month",
+     "cost": 20
+    },
+    {
+     "cap": "evm_rpc:polygon",
+     "url": "https://polygon-mainnet.g.alchemy.com/v2/{key}",
+     "rps": 10,
+     "limit": 30000000,
+     "period": "month",
+     "cost": 20
+    },
+    {
+     "cap": "evm_rpc:op",
+     "url": "https://opt-mainnet.g.alchemy.com/v2/{key}",
+     "rps": 10,
+     "limit": 30000000,
+     "period": "month",
+     "cost": 20
+    },
+    {
+     "cap": "evm_rpc:bsc",
+     "url": "https://bnb-mainnet.g.alchemy.com/v2/{key}",
+     "rps": 10,
+     "limit": 30000000,
+     "period": "month",
+     "cost": 20
+    },
+    {
+     "cap": "evm_rpc:avax",
+     "url": "https://avax-mainnet.g.alchemy.com/v2/{key}",
+     "rps": 10,
+     "limit": 30000000,
+     "period": "month",
+     "cost": 20
+    },
+    {
+     "cap": "solana_ws",
+     "url": "wss://solana-mainnet.g.alchemy.com/v2/{key}",
+     "rps": 1,
+     "limit": 30000000,
+     "period": "month",
+     "cost": 0,
+     "cost_per_mb": 41943
+    },
+    {
+     "cap": "evm_ws:eth",
+     "url": "wss://eth-mainnet.g.alchemy.com/v2/{key}",
+     "rps": 1,
+     "limit": 30000000,
+     "period": "month",
+     "cost": 0,
+     "cost_per_mb": 41943
+    },
+    {
+     "cap": "evm_ws:base",
+     "url": "wss://base-mainnet.g.alchemy.com/v2/{key}",
+     "rps": 1,
+     "limit": 30000000,
+     "period": "month",
+     "cost": 0,
+     "cost_per_mb": 41943
+    },
+    {
+     "cap": "evm_ws:arb",
+     "url": "wss://arb-mainnet.g.alchemy.com/v2/{key}",
+     "rps": 1,
+     "limit": 30000000,
+     "period": "month",
+     "cost": 0,
+     "cost_per_mb": 41943
+    },
+    {
+     "cap": "evm_ws:polygon",
+     "url": "wss://polygon-mainnet.g.alchemy.com/v2/{key}",
+     "rps": 1,
+     "limit": 30000000,
+     "period": "month",
+     "cost": 0,
+     "cost_per_mb": 41943
+    },
+    {
+     "cap": "evm_ws:op",
+     "url": "wss://opt-mainnet.g.alchemy.com/v2/{key}",
+     "rps": 1,
+     "limit": 30000000,
+     "period": "month",
+     "cost": 0,
+     "cost_per_mb": 41943
+    },
+    {
+     "cap": "evm_ws:bsc",
+     "url": "wss://bnb-mainnet.g.alchemy.com/v2/{key}",
+     "rps": 1,
+     "limit": 30000000,
+     "period": "month",
+     "cost": 0,
+     "cost_per_mb": 41943
+    },
+    {
+     "cap": "evm_ws:avax",
+     "url": "wss://avax-mainnet.g.alchemy.com/v2/{key}",
+     "rps": 1,
+     "limit": 30000000,
+     "period": "month",
+     "cost": 0,
+     "cost_per_mb": 41943
+    }
+   ],
+   "notes": "Enable each network in the Alchemy dashboard first, otherwise it answers 403. 'cost' is an average guess of compute units per call; the real value depends on the method. The EVM host names (eth-mainnet, base-mainnet, arb-mainnet, polygon-mainnet, opt-mainnet, bnb-mainnet, avax-mainnet) follow Alchemy's usual pattern; run `lynx-relay test` to confirm."
+  },
+  {
+   "id": "chainstack",
+   "name": "Chainstack",
+   "kind": "user_url",
+   "signup": "https://chainstack.com/",
+   "key_env": "CHAINSTACK_RPC_URL",
+   "free": {
+    "summary": "about 3M requests per month, 25 requests per second",
+    "confidence": "third_party_unverified",
+    "source": "https://www.helius.dev/blog/top-solana-rpcs-helius-vs-other-node-providers"
+   },
+   "endpoints": [
+    {
+     "cap": "solana_rpc",
+     "url": "{key}",
+     "rps": 20,
+     "limit": 3000000,
+     "period": "month",
+     "cost": 1
+    }
+   ],
+   "notes": "Paste the full endpoint URL of your project (it contains your key). Limit 0 = no monthly cap known, only the rate limit is enforced."
+  },
+  {
+   "id": "ankr",
+   "name": "Ankr",
+   "kind": "user_url",
+   "signup": "https://www.ankr.com/",
+   "key_env": "ANKR_RPC_URL",
+   "free": {
+    "summary": "30 requests per second on the free plan",
+    "confidence": "third_party_unverified",
+    "source": "https://www.alchemy.com/overviews/solana-rpc"
+   },
+   "endpoints": [
+    {
+     "cap": "solana_rpc",
+     "url": "{key}",
+     "rps": 20,
+     "limit": 0,
+     "period": "month",
+     "cost": 1
+    }
+   ],
+   "notes": "Paste the full endpoint URL of your project (it contains your key). Limit 0 = no monthly cap known, only the rate limit is enforced."
+  },
+  {
+   "id": "syndica",
+   "name": "Syndica",
+   "kind": "user_url",
+   "signup": "https://syndica.io/",
+   "key_env": "SYNDICA_RPC_URL",
+   "free": {
+    "summary": "10M requests per month",
+    "confidence": "third_party_unverified",
+    "source": "https://www.alchemy.com/overviews/solana-rpc"
+   },
+   "endpoints": [
+    {
+     "cap": "solana_rpc",
+     "url": "{key}",
+     "rps": 10,
+     "limit": 10000000,
+     "period": "month",
+     "cost": 1
+    }
+   ],
+   "notes": "Paste the full endpoint URL of your project (it contains your key). Limit 0 = no monthly cap known, only the rate limit is enforced."
+  },
+  {
+   "id": "solana-public",
+   "name": "Solana public RPC",
+   "kind": "keyless",
+   "signup": "https://solana.com/docs/references/clusters",
+   "key_env": "",
+   "free": {
+    "summary": "free, no key; documented about 100 requests per 10 s per IP and 40 concurrent connections, not meant for production",
+    "confidence": "measured_2026-10-25",
+    "source": "https://solana.com/docs/references/clusters"
+   },
+   "endpoints": [
+    {
+     "cap": "solana_rpc",
+     "url": "https://api.mainnet-beta.solana.com",
+     "rps": 2,
+     "limit": 0,
+     "period": "none",
+     "cost": 1
+    },
+    {
+     "cap": "solana_ws",
+     "url": "wss://api.mainnet-beta.solana.com",
+     "rps": 1,
+     "limit": 0,
+     "period": "none",
+     "cost": 0,
+     "cost_per_mb": 0
+    }
+   ],
+   "notes": "WebSocket logsSubscribe measured 2026-11-03: 40 per-token subscriptions accepted, no data cap.",
+   "rank": 1
+  },
+  {
+   "id": "publicnode-sol",
+   "name": "PublicNode (Solana)",
+   "kind": "keyless",
+   "signup": "https://www.publicnode.com/",
+   "key_env": "",
+   "free": {
+    "summary": "free, no key, no published limit; transaction history is short",
+    "confidence": "measured_2026-10-25",
+    "source": "https://www.publicnode.com/"
+   },
+   "endpoints": [
+    {
+     "cap": "solana_rpc",
+     "url": "https://solana-rpc.publicnode.com",
+     "rps": 2,
+     "limit": 0,
+     "period": "none",
+     "cost": 1
+    }
+   ],
+   "notes": "Older transactions often return null.",
+   "rank": 2
+  },
+  {
+   "id": "48club",
+   "name": "48club",
+   "kind": "keyless",
+   "signup": "",
+   "key_env": "",
+   "free": {
+    "summary": "free public EVM node, no key; paced at 5 requests per second by this tool",
+    "confidence": "measured_2026-10-25",
+    "source": "docs/PROVIDERS.md of the LynxCheck repo"
+   },
+   "endpoints": [
+    {
+     "cap": "evm_rpc:bsc",
+     "url": "https://rpc-bsc.48.club",
+     "rps": 5,
+     "limit": 0,
+     "period": "none",
+     "cost": 1
+    }
+   ],
+   "notes": "BNB Chain, slow getLogs.",
+   "rank": 3
+  },
+  {
+   "id": "arbitrum-official",
+   "name": "arbitrum-official",
+   "kind": "keyless",
+   "signup": "",
+   "key_env": "",
+   "free": {
+    "summary": "free public EVM node, no key; paced at 5 requests per second by this tool",
+    "confidence": "measured_2026-10-25",
+    "source": "docs/PROVIDERS.md of the LynxCheck repo"
+   },
+   "endpoints": [
+    {
+     "cap": "evm_rpc:arb",
+     "url": "https://arb1.arbitrum.io/rpc",
+     "rps": 5,
+     "limit": 0,
+     "period": "none",
+     "cost": 1
+    }
+   ],
+   "notes": "Arbitrum only.",
+   "rank": 3
+  },
+  {
+   "id": "avax-official",
+   "name": "avax-official",
+   "kind": "keyless",
+   "signup": "",
+   "key_env": "",
+   "free": {
+    "summary": "free public EVM node, no key; paced at 5 requests per second by this tool",
+    "confidence": "measured_2026-10-25",
+    "source": "docs/PROVIDERS.md of the LynxCheck repo"
+   },
+   "endpoints": [
+    {
+     "cap": "evm_rpc:avax",
+     "url": "https://api.avax.network/ext/bc/C/rpc",
+     "rps": 5,
+     "limit": 0,
+     "period": "none",
+     "cost": 1
+    }
+   ],
+   "notes": "Avalanche only; head and calls, no wide getLogs.",
+   "rank": 3
+  },
+  {
+   "id": "mevblocker",
+   "name": "mevblocker",
+   "kind": "keyless",
+   "signup": "",
+   "key_env": "",
+   "free": {
+    "summary": "free public EVM node, no key; paced at 5 requests per second by this tool",
+    "confidence": "measured_2026-10-25",
+    "source": "docs/PROVIDERS.md of the LynxCheck repo"
+   },
+   "endpoints": [
+    {
+     "cap": "evm_rpc:eth",
+     "url": "https://rpc.mevblocker.io",
+     "rps": 5,
+     "limit": 0,
+     "period": "none",
+     "cost": 1
+    }
+   ],
+   "notes": "Ethereum only.",
+   "rank": 3
+  },
+  {
+   "id": "optimism-official",
+   "name": "optimism-official",
+   "kind": "keyless",
+   "signup": "",
+   "key_env": "",
+   "free": {
+    "summary": "free public EVM node, no key; paced at 5 requests per second by this tool",
+    "confidence": "measured_2026-10-25",
+    "source": "docs/PROVIDERS.md of the LynxCheck repo"
+   },
+   "endpoints": [
+    {
+     "cap": "evm_rpc:op",
+     "url": "https://mainnet.optimism.io",
+     "rps": 5,
+     "limit": 0,
+     "period": "none",
+     "cost": 1
+    }
+   ],
+   "notes": "Optimism only.",
+   "rank": 3
+  },
+  {
+   "id": "publicnode",
+   "name": "publicnode",
+   "kind": "keyless",
+   "signup": "",
+   "key_env": "",
+   "free": {
+    "summary": "free public EVM node, no key; paced at 5 requests per second by this tool",
+    "confidence": "measured_2026-10-25",
+    "source": "docs/PROVIDERS.md of the LynxCheck repo"
+   },
+   "endpoints": [
+    {
+     "cap": "evm_rpc:bsc",
+     "url": "https://bsc-rpc.publicnode.com",
+     "rps": 5,
+     "limit": 0,
+     "period": "none",
+     "cost": 1
+    },
+    {
+     "cap": "evm_rpc:base",
+     "url": "https://base-rpc.publicnode.com",
+     "rps": 5,
+     "limit": 0,
+     "period": "none",
+     "cost": 1
+    },
+    {
+     "cap": "evm_ws:eth",
+     "url": "wss://ethereum-rpc.publicnode.com",
+     "rps": 1,
+     "limit": 0,
+     "period": "none",
+     "cost": 0,
+     "cost_per_mb": 0
+    },
+    {
+     "cap": "evm_ws:base",
+     "url": "wss://base-rpc.publicnode.com",
+     "rps": 1,
+     "limit": 0,
+     "period": "none",
+     "cost": 0,
+     "cost_per_mb": 0
+    },
+    {
+     "cap": "evm_ws:bsc",
+     "url": "wss://bsc-rpc.publicnode.com",
+     "rps": 1,
+     "limit": 0,
+     "period": "none",
+     "cost": 0,
+     "cost_per_mb": 0
+    },
+    {
+     "cap": "evm_ws:arb",
+     "url": "wss://arbitrum-one-rpc.publicnode.com",
+     "rps": 1,
+     "limit": 0,
+     "period": "none",
+     "cost": 0,
+     "cost_per_mb": 0
+    },
+    {
+     "cap": "evm_ws:polygon",
+     "url": "wss://polygon-bor-rpc.publicnode.com",
+     "rps": 1,
+     "limit": 0,
+     "period": "none",
+     "cost": 0,
+     "cost_per_mb": 0
+    },
+    {
+     "cap": "evm_ws:op",
+     "url": "wss://optimism-rpc.publicnode.com",
+     "rps": 1,
+     "limit": 0,
+     "period": "none",
+     "cost": 0,
+     "cost_per_mb": 0
+    },
+    {
+     "cap": "evm_ws:avax",
+     "url": "wss://avalanche-c-chain-rpc.publicnode.com",
+     "rps": 1,
+     "limit": 0,
+     "period": "none",
+     "cost": 0,
+     "cost_per_mb": 0
+    }
+   ],
+   "notes": "Fastest keyless nodes in our 2026-10-25 probe; wallet-topic getLogs without an address filter is refused. WebSocket eth_subscribe newHeads measured 2026-11-04 on eth, base, bsc, arb, polygon, op and avax: subscription accepted, blocks delivered, no published data cap.",
+   "rank": 1
+  },
+  {
+   "id": "tenderly",
+   "name": "tenderly",
+   "kind": "keyless",
+   "signup": "",
+   "key_env": "",
+   "free": {
+    "summary": "free public EVM node, no key; paced at 5 requests per second by this tool",
+    "confidence": "measured_2026-10-25",
+    "source": "docs/PROVIDERS.md of the LynxCheck repo"
+   },
+   "endpoints": [
+    {
+     "cap": "evm_rpc:base",
+     "url": "https://gateway.tenderly.co/public/base",
+     "rps": 5,
+     "limit": 0,
+     "period": "none",
+     "cost": 1
+    },
+    {
+     "cap": "evm_rpc:eth",
+     "url": "https://gateway.tenderly.co/public/mainnet",
+     "rps": 5,
+     "limit": 0,
+     "period": "none",
+     "cost": 1
+    },
+    {
+     "cap": "evm_rpc:arb",
+     "url": "https://gateway.tenderly.co/public/arbitrum",
+     "rps": 5,
+     "limit": 0,
+     "period": "none",
+     "cost": 1
+    },
+    {
+     "cap": "evm_rpc:polygon",
+     "url": "https://gateway.tenderly.co/public/polygon",
+     "rps": 5,
+     "limit": 0,
+     "period": "none",
+     "cost": 1
+    },
+    {
+     "cap": "evm_rpc:avax",
+     "url": "https://gateway.tenderly.co/public/avalanche",
+     "rps": 5,
+     "limit": 0,
+     "period": "none",
+     "cost": 1
+    },
+    {
+     "cap": "evm_rpc:op",
+     "url": "https://gateway.tenderly.co/public/optimism",
+     "rps": 5,
+     "limit": 0,
+     "period": "none",
+     "cost": 1
+    }
+   ],
+   "notes": "Public gateway, getLogs ranges up to 1000 blocks.",
+   "rank": 2
+  },
+  {
+   "id": "thirdweb",
+   "name": "thirdweb",
+   "kind": "keyless",
+   "signup": "",
+   "key_env": "",
+   "free": {
+    "summary": "free public EVM node, no key; paced at 5 requests per second by this tool",
+    "confidence": "measured_2026-10-25",
+    "source": "docs/PROVIDERS.md of the LynxCheck repo"
+   },
+   "endpoints": [
+    {
+     "cap": "evm_rpc:bsc",
+     "url": "https://56.rpc.thirdweb.com",
+     "rps": 5,
+     "limit": 0,
+     "period": "none",
+     "cost": 1
+    },
+    {
+     "cap": "evm_rpc:base",
+     "url": "https://8453.rpc.thirdweb.com",
+     "rps": 5,
+     "limit": 0,
+     "period": "none",
+     "cost": 1
+    },
+    {
+     "cap": "evm_rpc:arb",
+     "url": "https://42161.rpc.thirdweb.com",
+     "rps": 5,
+     "limit": 0,
+     "period": "none",
+     "cost": 1
+    },
+    {
+     "cap": "evm_rpc:polygon",
+     "url": "https://137.rpc.thirdweb.com",
+     "rps": 5,
+     "limit": 0,
+     "period": "none",
+     "cost": 1
+    },
+    {
+     "cap": "evm_rpc:avax",
+     "url": "https://43114.rpc.thirdweb.com",
+     "rps": 5,
+     "limit": 0,
+     "period": "none",
+     "cost": 1
+    },
+    {
+     "cap": "evm_rpc:op",
+     "url": "https://10.rpc.thirdweb.com",
+     "rps": 5,
+     "limit": 0,
+     "period": "none",
+     "cost": 1
+    }
+   ],
+   "notes": "Slow but stable; a good third fallback.",
+   "rank": 4
+  }
+ ],
+ "market_data": [
+  {
+   "id": "dexscreener",
+   "name": "DexScreener API",
+   "key": false,
+   "free": "about 300 requests per minute (pairs), 60 per minute (profiles); no key",
+   "source": "https://docs.dexscreener.com/api/reference",
+   "confidence": "measured_2026-10-25"
+  },
+  {
+   "id": "geckoterminal",
+   "name": "GeckoTerminal API",
+   "key": false,
+   "free": "about 30 requests per minute, no key",
+   "source": "https://www.geckoterminal.com/dex-api",
+   "confidence": "measured_2026-10-25"
+  },
+  {
+   "id": "jupiter-lite",
+   "name": "Jupiter lite API (Solana token info)",
+   "key": false,
+   "free": "about 60 requests per minute, no key (verify)",
+   "source": "https://dev.jup.ag/",
+   "confidence": "measured_2026-10-25"
+  },
+  {
+   "id": "binance-public",
+   "name": "Binance public market data",
+   "key": false,
+   "free": "6000 request weight per minute per IP, no key",
+   "source": "https://developers.binance.com/",
+   "confidence": "measured_2026-10-25"
+  },
+  {
+   "id": "codex",
+   "name": "Codex (token data, WebSocket)",
+   "key": true,
+   "free": "10,000 requests per month with a free key",
+   "source": "https://www.codex.io/blog/pump-fun-api",
+   "confidence": "third_party_unverified"
+  },
+  {
+   "id": "solana-tracker",
+   "name": "Solana Tracker Data API",
+   "key": true,
+   "free": "10,000 requests per month, 1 per second; WebSocket needs a paid plan",
+   "source": "https://www.solanatracker.io/pumpfun-api",
+   "confidence": "third_party_unverified"
+  },
+  {
+   "id": "pumpportal",
+   "name": "PumpPortal data API",
+   "key": false,
+   "free": "new-token and migration events free; token trade streams are metered (0.01 SOL per 10,000 events) and need a funded wallet; one connection at a time",
+   "source": "https://pumpportal.fun/data-api/real-time/",
+   "confidence": "vendor_doc"
+  }
+ ]
+}
