@@ -73,4 +73,6 @@ Tools: `relay_free_tiers`, `relay_status`, `relay_rpc` (read-only calls), `relay
 - Call costs are an average per provider (1 credit for Helius, a guess of 20 compute units for Alchemy). Treat the percentage as an estimate.
 - The catalog is only as good as its last check. Please send corrections.
 
+Made by [LynxCheck](https://mintsieve.141-95-95-56.sslip.io/), which checks crypto tokens for risk signals and estimates exit costs.
+
 Information only. This tool is not affiliated with any provider and gives no financial advice.
