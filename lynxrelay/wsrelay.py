@@ -13,7 +13,7 @@ class Session:
         self.relay, self.client, self.cap, self.connect, self.sleep, self.retry_wait, self.give_up_s, self.clock, self.ping_s = relay, client, cap, connect, sleep, retry_wait, give_up_s, clock, ping_s
         self.evm = cap.startswith("evm_ws")          # EVM subscription ids are hex strings (eth_subscribe); Solana ids are numbers
         self.lock = threading.RLock(); self.up = None; self.ep = None; self.done = threading.Event(); self.connected_at = 0.0
-        self.subs = {}; self.upmap = {}; self.pending = {}; self.next_cid = 1; self.next_req = 10 ** 9; self.switches = 0; self.failback_s = 300.0
+        self.subs = {}; self.upmap = {}; self.pending = {}; self.dropped = {}; self.next_cid = 1; self.next_req = 10 ** 9; self.switches = 0; self.failback_s = 300.0
 
     # ---- helpers ----
     def _to_client(self, obj):
@@ -54,7 +54,9 @@ class Session:
                 self._send_subscription(cid)
         elif _is_unsub(method):
             params = m.get("params"); cid = self._in(params[0]) if isinstance(params, list) and params else None
-            with self.lock: sub = self.subs.pop(cid, None)
+            with self.lock:
+                sub = self.subs.pop(cid, None)
+                if sub and sub["up"] is None: self.dropped[cid] = method      # the upstream id is not known yet: end it when the answer comes
             if sub and sub["up"] is not None:
                 with self.lock: self.upmap.pop(sub["up"], None)
                 r = self._req_id(); self.pending[r] = ("unsub", cid); self._to_up({"jsonrpc": "2.0", "id": r, "method": method, "params": [sub["up"]]})
@@ -90,7 +92,11 @@ class Session:
             kind, cid = self.pending.pop(rid)
             if kind == "unsub": return
             sub = self.subs.get(cid)
-            if sub is None: return
+            if sub is None:
+                with self.lock: unsub = self.dropped.pop(cid, None)
+                if unsub and isinstance(m.get("result"), (int, str)) and not isinstance(m.get("result"), bool):
+                    r = self._req_id(); self.pending[r] = ("unsub", cid); self._to_up({"jsonrpc": "2.0", "id": r, "method": unsub, "params": [m["result"]]})
+                return
             if isinstance(m.get("result"), (int, str)) and not isinstance(m.get("result"), bool) and m.get("result") != "":
                 sub["up"] = m["result"]; self.upmap[m["result"]] = cid
                 if sub.get("client_id") is not None: self._to_client({"jsonrpc": "2.0", "id": sub["client_id"], "result": self._out(cid)}); sub["client_id"] = None
