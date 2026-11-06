@@ -34,6 +34,7 @@ With `pip install .` the command is `lynx-relay` instead of `python3 -m lynxrela
 |---|---|---|
 | Helius | key | 1,000,000 credits per month, 10 requests/s (Solana) |
 | Alchemy | key | 30M compute units per month (Solana + 7 EVM networks; enable each network in the dashboard) |
+| Shyft, Solana Tracker | key | Shyft: no credit limit, 10 requests/s; Solana Tracker: 500,000 credits per month, 2 streams (Solana) |
 | Chainstack, Ankr, Syndica | full endpoint URL | free plans, limits in the catalog (Solana) |
 | Solana public RPC, PublicNode, Tenderly, thirdweb and others | nothing | free public nodes, no guarantees |
 

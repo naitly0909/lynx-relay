@@ -1,6 +1,6 @@
 {
  "version": 1,
- "verified": "2026-11-03",
+ "verified": "2026-11-06",
  "disclaimer": "Free tiers change without notice. 'confidence' says where a number comes from; check the provider's page before relying on it. One account per provider: do not create several accounts at the same provider to get around its limits, that usually breaks its terms.",
  "providers": [
   {
@@ -254,6 +254,60 @@
     }
    ],
    "notes": "Paste the full endpoint URL of your project (it contains your key). Limit 0 = no monthly cap known, only the rate limit is enforced."
+  },
+  {
+   "id": "solanatracker",
+   "name": "Solana Tracker",
+   "kind": "keyed",
+   "signup": "https://www.solanatracker.io/account/shared-rpc?plan=free",
+   "key_env": "SOLANATRACKER_API_KEY",
+   "free": {
+    "summary": "500,000 credits per month, 5 requests per second, 2 WebSocket connections; how streams are billed is not documented",
+    "confidence": "vendor_doc",
+    "source": "https://docs.solanatracker.io/solana-rpc/credits-and-rate-limits"
+   },
+   "endpoints": [
+    {
+     "cap": "solana_rpc",
+     "url": "https://rpc-mainnet.solanatracker.io/?api_key={key}",
+     "rps": 4,
+     "limit": 500000,
+     "period": "month",
+     "cost": 1
+    },
+    {
+     "cap": "solana_ws",
+     "url": "wss://rpc-mainnet.solanatracker.io/?api_key={key}",
+     "rps": 2,
+     "limit": 500000,
+     "period": "month",
+     "cost": 1
+    }
+   ],
+   "notes": "Redistribution of raw API data needs their written consent; derived data may be shown. Terms: https://www.solanatracker.io/terms"
+  },
+  {
+   "id": "shyft",
+   "name": "Shyft",
+   "kind": "keyed",
+   "signup": "https://shyft.to/get-api-key",
+   "key_env": "SHYFT_API_KEY",
+   "free": {
+    "summary": "free plan: unlimited credits, 10 RPC requests per second, no gRPC; stream limits are not documented",
+    "confidence": "vendor_doc",
+    "source": "https://shyft.to/solana-rpc-grpc-pricing"
+   },
+   "endpoints": [
+    {
+     "cap": "solana_rpc",
+     "url": "https://rpc.shyft.to/?api_key={key}",
+     "rps": 8,
+     "limit": 0,
+     "period": "none",
+     "cost": 1
+    }
+   ],
+   "notes": "Standard WebSocket methods are documented but the mainnet address is not, so no stream endpoint is listed yet."
   },
   {
    "id": "solana-public",
